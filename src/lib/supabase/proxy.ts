@@ -27,9 +27,19 @@ export async function updateSession(request: NextRequest) {
 
   // Zwischen createServerClient und getClaims keinen weiteren Code einfügen,
   // sonst können Nutzer zufällig ausgeloggt werden.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
 
-  // Weiterleitung auf /login für geschützte Seiten folgt mit dem Login-Schritt.
+  // Nicht angemeldet → zur Anmeldung, außer auf den öffentlichen Seiten.
+  const path = request.nextUrl.pathname;
+  const isPublic = path.startsWith("/login") || path.startsWith("/auth");
+  if (!user && !isPublic) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    return NextResponse.redirect(loginUrl);
+  }
 
+  // Wichtig: immer `response` zurückgeben, damit die Session-Cookies erhalten bleiben.
   return response;
 }
