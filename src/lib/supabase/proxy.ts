@@ -32,7 +32,8 @@ export async function updateSession(request: NextRequest) {
 
   // Nicht angemeldet → zur Anmeldung, außer auf den öffentlichen Seiten.
   const path = request.nextUrl.pathname;
-  const isPublic = path.startsWith("/login") || path.startsWith("/auth");
+  const isPublic =
+    path.startsWith("/login") || path.startsWith("/auth") || path.startsWith("/api/stripe/webhook");
   if (!user && !isPublic) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";

@@ -80,7 +80,7 @@ export async function createItem(_prev: ItemFormState, formData: FormData): Prom
     if (error.hint === "free_item_limit_reached") {
       return {
         error:
-          "Du hast die 20 kostenlosen Artikel aufgebraucht. Mit einem Abo kannst du unbegrenzt weitere anlegen.",
+          "Du hast die 20 kostenlosen Artikel aufgebraucht. Mit einem Abo (unter „Konto“) kannst du unbegrenzt weitere anlegen.",
       };
     }
     return { error: "Der Artikel konnte nicht gespeichert werden. Bitte versuche es erneut." };

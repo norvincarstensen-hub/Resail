@@ -79,8 +79,8 @@ export function DeleteAccountForm() {
   return (
     <form action={action} className="flex flex-col gap-3">
       <p className="text-sm">
-        Löscht dein Konto mit allen Artikeln, Verkäufen, Fotos und Belegen. Das lässt sich nicht
-        rückgängig machen. Lade vorher deine Daten herunter, wenn du sie behalten willst.
+        Löscht dein Konto mit allen Artikeln, Verkäufen, Fotos und Belegen. Ein laufendes Abo wird
+        dabei sofort gekündigt. Das lässt sich nicht rückgängig machen. Lade vorher deine Daten herunter, wenn du sie behalten willst.
       </p>
       <label htmlFor="confirm" className="text-sm font-medium">
         Zum Bestätigen LÖSCHEN eintippen
