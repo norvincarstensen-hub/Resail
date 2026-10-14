@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseEuroToCents } from "@/lib/money";
+import { FILE_BUCKET, isItemFilePath } from "@/lib/files";
 import {
   ITEM_STATUSES,
   ITEM_TYPES,
   PURCHASE_SOURCES,
+  RECEIPT_TYPES,
   isOneOf,
   type ItemStatus,
   type ItemType,
@@ -70,9 +72,9 @@ export async function createItem(_prev: ItemFormState, formData: FormData): Prom
   if (typeof input === "string") return { error: input };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("items").insert(input);
+  const { data, error } = await supabase.from("items").insert(input).select("id").single();
 
-  if (error) {
+  if (error || !data) {
     if (error.hint === "free_item_limit_reached") {
       return {
         error:
@@ -83,7 +85,8 @@ export async function createItem(_prev: ItemFormState, formData: FormData): Prom
   }
 
   revalidatePath("/artikel");
-  redirect("/artikel");
+  // Direkt zur Artikelseite, damit man gleich ein Foto hinzufügen kann.
+  redirect(`/artikel/${data.id}?neu=1`);
 }
 
 export async function updateItem(
@@ -105,9 +108,91 @@ export async function updateItem(
   redirect("/artikel");
 }
 
+async function currentUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  return data?.claims.sub ?? null;
+}
+
 export async function deleteItem(id: string): Promise<void> {
   const supabase = await createClient();
+  const userId = await currentUserId();
+  if (!userId) redirect("/login");
+
+  // Erst die Dateien löschen: Die Speicher-Regeln erlauben das nur, solange der Artikel existiert.
+  const folder = `${userId}/${id}`;
+  const { data: files } = await supabase.storage.from(FILE_BUCKET).list(folder, { limit: 1000 });
+  if (files?.length) {
+    await supabase.storage.from(FILE_BUCKET).remove(files.map((f) => `${folder}/${f.name}`));
+  }
+
   await supabase.from("items").delete().eq("id", id);
   revalidatePath("/artikel");
   redirect("/artikel");
+}
+
+export type FileActionResult = { error?: string };
+
+// Speichert ein bereits hochgeladenes Foto am Artikel und löscht das vorherige.
+export async function setItemPhoto(itemId: string, path: string | null): Promise<FileActionResult> {
+  const userId = await currentUserId();
+  if (!userId) return { error: "Bitte melde dich erneut an." };
+  if (path !== null && !isItemFilePath(path, userId, itemId)) return { error: "Ungültiger Dateipfad." };
+
+  const supabase = await createClient();
+  const { data: item } = await supabase
+    .from("items")
+    .select("photo_path")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!item) return { error: "Artikel nicht gefunden." };
+
+  const { error } = await supabase.from("items").update({ photo_path: path }).eq("id", itemId);
+  if (error) return { error: "Das Foto konnte nicht gespeichert werden." };
+
+  if (item.photo_path && item.photo_path !== path) {
+    await supabase.storage.from(FILE_BUCKET).remove([item.photo_path]);
+  }
+
+  revalidatePath("/artikel");
+  revalidatePath(`/artikel/${itemId}`);
+  return {};
+}
+
+// Legt zu einer bereits hochgeladenen Datei einen Beleg-Eintrag an.
+export async function addReceipt(
+  itemId: string,
+  path: string,
+  type: string,
+): Promise<FileActionResult> {
+  const userId = await currentUserId();
+  if (!userId) return { error: "Bitte melde dich erneut an." };
+  if (!isItemFilePath(path, userId, itemId)) return { error: "Ungültiger Dateipfad." };
+  if (!isOneOf(RECEIPT_TYPES, type)) return { error: "Bitte wähle eine Belegart." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("receipts")
+    .insert({ item_id: itemId, file_path: path, type });
+  if (error) return { error: "Der Beleg konnte nicht gespeichert werden." };
+
+  revalidatePath(`/artikel/${itemId}`);
+  return {};
+}
+
+export async function deleteReceipt(receiptId: string): Promise<FileActionResult> {
+  const supabase = await createClient();
+  const { data: receipt } = await supabase
+    .from("receipts")
+    .select("item_id, file_path")
+    .eq("id", receiptId)
+    .maybeSingle();
+  if (!receipt) return { error: "Beleg nicht gefunden." };
+
+  await supabase.storage.from(FILE_BUCKET).remove([receipt.file_path]);
+  const { error } = await supabase.from("receipts").delete().eq("id", receiptId);
+  if (error) return { error: "Der Beleg konnte nicht gelöscht werden." };
+
+  revalidatePath(`/artikel/${receipt.item_id}`);
+  return {};
 }

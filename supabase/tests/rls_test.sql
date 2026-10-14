@@ -45,7 +45,7 @@ begin
   insert into public.sales (item_id, platform, sale_price_cents)
     values (item_a, 'vinted', 2000);
   insert into public.receipts (item_id, file_path)
-    values (item_a, 'a/beleg.jpg');
+    values (item_a, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/' || item_a || '/beleg.jpg');
   -- Artikel-ID merken, damit B gleich versuchen kann, darauf zuzugreifen
   perform set_config('test.item_a', item_a::text, true);
 end $$;
@@ -112,7 +112,8 @@ begin
   exception when foreign_key_violation then null;
   end;
   begin
-    insert into public.receipts (item_id, file_path) values (item_a, 'b/beleg.jpg');
+    insert into public.receipts (item_id, file_path)
+      values (item_a, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/' || item_a || '/beleg.jpg');
     raise exception 'FEHLER: B konnte einen Beleg an A''s Artikel hängen';
   exception when foreign_key_violation then null;
   end;

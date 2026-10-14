@@ -18,8 +18,26 @@ export type Item = {
   purchase_source: PurchaseSource | null;
   item_type: ItemType;
   status: ItemStatus;
+  photo_path: string | null;
   note: string | null;
   created_at: string;
+};
+
+export const RECEIPT_TYPES = ["kassenbon", "ueberweisung", "screenshot", "sonstiges"] as const;
+export type ReceiptType = (typeof RECEIPT_TYPES)[number];
+
+export type Receipt = {
+  id: string;
+  file_path: string;
+  type: ReceiptType;
+  created_at: string;
+};
+
+export const RECEIPT_TYPE_LABELS: Record<ReceiptType, string> = {
+  kassenbon: "Kassenbon",
+  ueberweisung: "Überweisung",
+  screenshot: "Screenshot",
+  sonstiges: "Sonstiges",
 };
 
 export const STATUS_LABELS: Record<ItemStatus, string> = {
