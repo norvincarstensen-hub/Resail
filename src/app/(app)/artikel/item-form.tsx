@@ -14,6 +14,7 @@ import {
   type Item,
 } from "@/lib/items";
 import type { ItemFormState } from "./actions";
+import { SelectWrapper, selectClass } from "./select";
 
 type Props = {
   action: (prev: ItemFormState, formData: FormData) => Promise<ItemFormState>;
@@ -105,11 +106,12 @@ export function ItemForm({ action, item, today, submitLabel }: Props) {
           <label htmlFor="purchase_source" className={label}>
             Gekauft bei
           </label>
+          <SelectWrapper>
           <select
             id="purchase_source"
             name="purchase_source"
             defaultValue={item?.purchase_source ?? ""}
-            className={input}
+            className={selectClass}
           >
             <option value="">–</option>
             {PURCHASE_SOURCES.map((source) => (
@@ -118,18 +120,26 @@ export function ItemForm({ action, item, today, submitLabel }: Props) {
               </option>
             ))}
           </select>
+          </SelectWrapper>
         </div>
         <div className={field}>
           <label htmlFor="status" className={label}>
             Status
           </label>
-          <select id="status" name="status" defaultValue={item?.status ?? "lager"} className={input}>
+          <SelectWrapper>
+          <select
+            id="status"
+            name="status"
+            defaultValue={item?.status ?? "lager"}
+            className={selectClass}
+          >
             {ITEM_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {STATUS_LABELS[status]}
               </option>
             ))}
           </select>
+          </SelectWrapper>
         </div>
       </div>
 
