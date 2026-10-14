@@ -10,10 +10,12 @@ import {
   ITEM_TYPES,
   PURCHASE_SOURCES,
   RECEIPT_TYPES,
+  SALE_PLATFORMS,
   isOneOf,
   type ItemStatus,
   type ItemType,
   type PurchaseSource,
+  type SalePlatform,
 } from "@/lib/items";
 
 export type ItemFormState = { error?: string };
@@ -100,6 +102,12 @@ export async function updateItem(
   const supabase = await createClient();
   const { data, error } = await supabase.from("items").update(input).eq("id", id).select("id");
 
+  if (error?.hint === "status_has_active_sale") {
+    return { error: "Der Artikel ist verkauft. Erfasse eine Rückgabe oder ein Storno, um den Status zu ändern." };
+  }
+  if (error?.hint === "status_requires_sale") {
+    return { error: "Den Status „Verkauft“ setzt die App, wenn du einen Verkauf erfasst." };
+  }
   if (error || !data?.length) {
     return { error: "Der Artikel konnte nicht gespeichert werden. Bitte versuche es erneut." };
   }
@@ -194,5 +202,114 @@ export async function deleteReceipt(receiptId: string): Promise<FileActionResult
   if (error) return { error: "Der Beleg konnte nicht gelöscht werden." };
 
   revalidatePath(`/artikel/${receipt.item_id}`);
+  return {};
+}
+
+// ---------------------------------------------------------------------------
+// Verkäufe
+// ---------------------------------------------------------------------------
+
+export type SaleFormState = { error?: string; saved?: number };
+
+type SaleInput = {
+  sale_date: string;
+  platform: SalePlatform;
+  sale_price_cents: number;
+  platform_fee_cents: number;
+  shipping_cents: number;
+  packaging_cents: number;
+};
+
+function parseCents(formData: FormData, key: string, label: string, required = false): number | string {
+  const value = text(formData, key);
+  if (value === "") return required ? `Bitte gib den ${label} ein.` : 0;
+  const cents = parseEuroToCents(value);
+  return cents === null ? `Der Betrag bei „${label}“ ist ungültig. Beispiel: 12,50` : cents;
+}
+
+function parseSaleForm(formData: FormData): SaleInput | string {
+  const platform = text(formData, "platform");
+  if (!isOneOf(SALE_PLATFORMS, platform)) return "Bitte wähle die Plattform.";
+
+  const date = text(formData, "sale_date");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return "Bitte gib das Verkaufsdatum ein.";
+
+  const price = parseCents(formData, "sale_price", "Verkaufspreis", true);
+  if (typeof price === "string") return price;
+  const fee = parseCents(formData, "platform_fee", "Gebühr");
+  if (typeof fee === "string") return fee;
+  const shipping = parseCents(formData, "shipping", "Versand");
+  if (typeof shipping === "string") return shipping;
+  const packaging = parseCents(formData, "packaging", "Verpackung");
+  if (typeof packaging === "string") return packaging;
+
+  return {
+    sale_date: date,
+    platform,
+    sale_price_cents: price,
+    platform_fee_cents: fee,
+    shipping_cents: shipping,
+    packaging_cents: packaging,
+  };
+}
+
+export async function createSale(
+  itemId: string,
+  _prev: SaleFormState,
+  formData: FormData,
+): Promise<SaleFormState> {
+  const input = parseSaleForm(formData);
+  if (typeof input === "string") return { error: input };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("sales").insert({ ...input, item_id: itemId });
+  if (error?.code === "23505") {
+    return { error: "Für diesen Artikel ist schon ein Verkauf erfasst." };
+  }
+  if (error) return { error: "Der Verkauf konnte nicht gespeichert werden. Bitte versuche es erneut." };
+
+  revalidatePath("/artikel");
+  revalidatePath(`/artikel/${itemId}`);
+  return { saved: Date.now() };
+}
+
+export async function updateSale(
+  saleId: string,
+  itemId: string,
+  _prev: SaleFormState,
+  formData: FormData,
+): Promise<SaleFormState> {
+  const input = parseSaleForm(formData);
+  if (typeof input === "string") return { error: input };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sales")
+    .update(input)
+    .eq("id", saleId)
+    .eq("cancelled", false)
+    .select("id");
+  if (error || !data?.length) {
+    return { error: "Der Verkauf konnte nicht gespeichert werden. Bitte versuche es erneut." };
+  }
+
+  revalidatePath("/artikel");
+  revalidatePath(`/artikel/${itemId}`);
+  return { saved: Date.now() };
+}
+
+export async function cancelSale(
+  saleId: string,
+  itemId: string,
+  reason: "rueckgabe" | "storno",
+): Promise<FileActionResult> {
+  if (reason !== "rueckgabe" && reason !== "storno") return { error: "Ungültiger Grund." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_sale", { sale_id: saleId, reason });
+  if (error) return { error: "Das hat nicht geklappt. Bitte lade die Seite neu und versuche es erneut." };
+
+  revalidatePath("/artikel");
+  revalidatePath(`/artikel/${itemId}`);
   return {};
 }

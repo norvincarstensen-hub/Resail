@@ -20,6 +20,7 @@ Ziel: erste zahlende Version Anfang Januar 2027.
 - Row Level Security auf allen Tabellen: Jeder Nutzer sieht nur seine eigenen Daten.
 - Meldegrenzen (30 Verkäufe / 2.000 €) als Einstellung speichern, nicht fest im Code.
 - Preismodell: kostenlos bis 20 Artikel, danach Abo. Gezählt wird jeder je angelegte Artikel (Löschen schafft keinen Platz). Keine zeitliche Testphase. Die Grenze wird in der Datenbank durchgesetzt (`free_item_limit()`), nicht nur in der Oberfläche.
+- Status "verkauft" setzt nur die Datenbank: genau dann, wenn ein aktiver (nicht stornierter) Verkauf existiert. Rückgabe → "retour", Storno → "gelistet" (Funktion `cancel_sale`).
 - Keine Automatisierung auf Vinted oder anderen Plattformen: kein Scraping, kein Relisting, kein Crossposting, kein Zugriff auf Nutzerkonten dort.
 - Keine Steuerberatung in Texten: Die App rechnet und erklärt allgemein, beurteilt aber nie den Einzelfall (z. B. nicht "Du bist gewerblich"). Formulierungen wie "Ab hier meldet die Plattform deine Verkäufe ans Finanzamt" sind okay.
 - "Vinted" nicht im App-Namen oder Logo verwenden.
@@ -48,10 +49,22 @@ Gewinn pro Artikel = sale_price − purchase_price − platform_fee − shipping
 
 Später (nicht jetzt bauen): Screenshot-Import mit KI, Ausgaben ohne Artikelbezug, Gewerbe-Modus, Ladenhüter-Ansicht, Gebührenrechner.
 
-## Aktuelle Phase: 1 · Fundament
+## Phase 1 · Fundament (abgeschlossen)
 
-- [ ] Next.js-Projekt aufsetzen, Supabase anbinden, Umgebungsvariablen in `.env.local` (nie committen)
-- [ ] Login per E-Mail (Magic Link)
-- [ ] Tabellen per SQL-Migration anlegen, inkl. Row Level Security
-- [ ] Artikel anlegen, bearbeiten, löschen, Liste mit Statusfilter
-- [ ] Foto und Beleg hochladen (Supabase Storage, privater Bucket)
+- [x] Next.js-Projekt aufsetzen, Supabase anbinden, Umgebungsvariablen in `.env.local` (nie committen)
+- [x] Login per E-Mail (Magic Link)
+- [x] Tabellen per SQL-Migration anlegen, inkl. Row Level Security
+- [x] Artikel anlegen, bearbeiten, löschen, Liste mit Statusfilter
+- [x] Foto und Beleg hochladen (Supabase Storage, privater Bucket)
+
+## Aktuelle Phase: 2 · Verkäufe und Auswertung
+
+- [ ] Verkauf erfassen (inkl. Gebühr, Versand, Verpackung), Rückgabe/Storno
+- [ ] Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
+- [ ] Melde-Ampel pro Plattform und Kalenderjahr
+
+## Datenbank-Änderungen
+
+Migrationen liegen in `supabase/migrations/` und werden im Supabase SQL Editor ausgeführt.
+Tests in `supabase/tests/` laufen ebenfalls dort und machen am Ende alles rückgängig.
+Nach jeder Migration alle Tests erneut ausführen.

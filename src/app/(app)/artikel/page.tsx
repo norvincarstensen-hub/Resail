@@ -4,7 +4,15 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { formatCents } from "@/lib/money";
 import { FILE_BUCKET, SIGNED_URL_SECONDS } from "@/lib/files";
-import { ITEM_STATUSES, STATUS_LABELS, formatDate, isOneOf, type Item } from "@/lib/items";
+import {
+  ITEM_STATUSES,
+  STATUS_LABELS,
+  formatDate,
+  isOneOf,
+  profitCents,
+  type Item,
+  type Sale,
+} from "@/lib/items";
 
 export const metadata: Metadata = { title: "Artikel · Reseller-Tracker" };
 
@@ -30,7 +38,26 @@ async function FreeLimit() {
 type ListItem = Pick<
   Item,
   "id" | "name" | "category" | "purchase_date" | "purchase_price_cents" | "status" | "photo_path"
->;
+> & { sales: Sale[] };
+
+function Amount({ item }: { item: ListItem }) {
+  const sale = item.sales.find((s) => !s.cancelled);
+  if (!sale) {
+    return <span className="shrink-0 tabular-nums">{formatCents(item.purchase_price_cents)}</span>;
+  }
+  const profit = profitCents(item.purchase_price_cents, sale);
+  return (
+    <span className="shrink-0 text-right">
+      <span
+        className={`block tabular-nums font-medium ${profit < 0 ? "text-red-600" : "text-green-700 dark:text-green-400"}`}
+      >
+        {profit >= 0 ? "+" : ""}
+        {formatCents(profit)}
+      </span>
+      <span className="block text-xs text-zinc-600 dark:text-zinc-400">Gewinn</span>
+    </span>
+  );
+}
 
 function Thumb({ url }: { url: string | null }) {
   if (!url) {
@@ -47,7 +74,9 @@ async function ItemList({ searchParams }: { searchParams: PageProps<"/artikel">[
   const supabase = await createClient();
   let query = supabase
     .from("items")
-    .select("id, name, category, purchase_date, purchase_price_cents, status, photo_path")
+    .select(
+      "id, name, category, purchase_date, purchase_price_cents, status, photo_path, sales(id, sale_date, platform, sale_price_cents, platform_fee_cents, shipping_cents, packaging_cents, cancelled)",
+    )
     .order("created_at", { ascending: false });
   if (status) query = query.eq("status", status);
   const { data: items, error } = await query.returns<ListItem[]>();
@@ -104,7 +133,7 @@ async function ItemList({ searchParams }: { searchParams: PageProps<"/artikel">[
                   {item.purchase_date && ` · ${formatDate(item.purchase_date)}`}
                 </span>
               </span>
-              <span className="shrink-0 tabular-nums">{formatCents(item.purchase_price_cents)}</span>
+              <Amount item={item} />
             </Link>
           </li>
         ))}

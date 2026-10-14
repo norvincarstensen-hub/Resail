@@ -79,3 +79,38 @@ export function formatDate(isoDate: string): string {
   const [y, m, d] = isoDate.split("-");
   return `${d}.${m}.${y}`;
 }
+
+// Status, die man von Hand wählen kann. "verkauft" setzt die App beim Erfassen eines Verkaufs.
+export const MANUAL_STATUSES = ["lager", "gelistet", "retour"] as const satisfies readonly ItemStatus[];
+
+export const SALE_PLATFORMS = ["vinted", "kleinanzeigen", "ebay", "sonstige"] as const;
+export type SalePlatform = (typeof SALE_PLATFORMS)[number];
+
+export const SALE_PLATFORM_LABELS: Record<SalePlatform, string> = {
+  vinted: "Vinted",
+  kleinanzeigen: "Kleinanzeigen",
+  ebay: "eBay",
+  sonstige: "Sonstige",
+};
+
+export type Sale = {
+  id: string;
+  sale_date: string;
+  platform: SalePlatform;
+  sale_price_cents: number;
+  platform_fee_cents: number;
+  shipping_cents: number;
+  packaging_cents: number;
+  cancelled: boolean;
+};
+
+// Gewinn = Verkaufspreis − Einkaufspreis − Gebühr − Versand − Verpackung (siehe CLAUDE.md)
+export function profitCents(purchasePriceCents: number, sale: Sale): number {
+  return (
+    sale.sale_price_cents -
+    purchasePriceCents -
+    sale.platform_fee_cents -
+    sale.shipping_cents -
+    sale.packaging_cents
+  );
+}
