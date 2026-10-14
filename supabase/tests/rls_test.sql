@@ -28,6 +28,13 @@ begin
         and report_threshold_revenue_cents = 200000) <> 2 then
     raise exception 'FEHLER: settings-Einträge mit Standard-Grenzen fehlen';
   end if;
+  if (select count(*) from public.profiles
+      where id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+        and subscription_status = 'trial'
+        and trial_ends_at between now() + interval '7 days' - interval '1 minute'
+                              and now() + interval '7 days' + interval '1 minute') <> 2 then
+    raise exception 'FEHLER: Testphase (7 Tage) wird nicht gesetzt';
+  end if;
 end $$;
 
 -- 2. Als Nutzer A anmelden und Daten anlegen
