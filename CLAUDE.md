@@ -45,7 +45,7 @@ Gewinn pro Artikel = sale_price − purchase_price − platform_fee − shipping
 4. Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
 5. Melde-Ampel pro Plattform und Kalenderjahr (grün / gelb ab 80 % / rot ab Grenze)
 6. Export der Jahresübersicht als CSV und PDF
-7. Login, Konto und Daten löschen, Daten exportieren
+7. Login, Konto und Daten löschen, Daten exportieren (Seite /konto; Meldegrenzen dort einstellbar)
 
 Später (nicht jetzt bauen): Screenshot-Import mit KI, Ausgaben ohne Artikelbezug, Gewerbe-Modus, Ladenhüter-Ansicht, Gebührenrechner.
 
@@ -62,6 +62,13 @@ Später (nicht jetzt bauen): Screenshot-Import mit KI, Ausgaben ohne Artikelbezu
 - [x] Verkauf erfassen (inkl. Gebühr, Versand, Verpackung), Rückgabe/Storno
 - [x] Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
 - [x] Melde-Ampel pro Plattform und Kalenderjahr (rot ab Grenze, gelb ab 80 %; Umsatz = voller Verkaufspreis, damit eher zu früh gewarnt wird)
+
+## Arbeitsweise mit Claude
+
+- Entwicklung auf einem Nebenzweig, Übernahme in `main` per Pull Request. Vercel veröffentlicht `main` automatisch.
+- Reine App-Änderungen ohne Datenbank darf Claude nach erfolgreichem `npm run lint` und `npm run build` selbst in `main` übernehmen und danach Bescheid geben.
+- Bei Datenbank-Änderungen vorher fragen: Der Nutzer führt die Migration im Supabase SQL Editor aus, danach die Tests, erst dann wird übernommen.
+- Preis, Rechtstexte und alles, was Geld kostet, entscheidet der Nutzer.
 
 ## Datenbank-Änderungen
 

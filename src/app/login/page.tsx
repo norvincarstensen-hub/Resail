@@ -5,7 +5,14 @@ import { LoginForm } from "./login-form";
 export const metadata: Metadata = { title: "Anmelden · Reseller-Tracker" };
 
 async function LinkError({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
-  const { fehler } = await searchParams;
+  const { fehler, geloescht } = await searchParams;
+  if (geloescht) {
+    return (
+      <p className="rounded-lg bg-green-50 p-3 text-sm text-green-900 dark:bg-green-950 dark:text-green-100">
+        Dein Konto und alle deine Daten wurden gelöscht.
+      </p>
+    );
+  }
   if (!fehler) return null;
   return (
     <p className="text-sm text-red-600">
