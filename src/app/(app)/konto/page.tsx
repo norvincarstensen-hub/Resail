@@ -3,16 +3,20 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./actions";
 import { DeleteAccountForm, ThresholdsForm } from "./forms";
+import { Billing } from "./billing";
+import { isBillingConfigured } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Konto · Reseller-Tracker" };
 
 const section = "flex flex-col gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-800";
 
-async function Account() {
+async function Account({ searchParams }: { searchParams: PageProps<"/konto">["searchParams"] }) {
+  const { abo } = await searchParams;
   const supabase = await createClient();
-  const [{ data: profile }, { data: settings }] = await Promise.all([
-    supabase.from("profiles").select("email").single(),
+  const [{ data: profile }, { data: settings }, { data: limit }] = await Promise.all([
+    supabase.from("profiles").select("email, subscription_status, items_created_count").single(),
     supabase.from("settings").select("report_threshold_sales, report_threshold_revenue_cents").single(),
+    supabase.rpc("free_item_limit"),
   ]);
 
   return (
@@ -30,6 +34,18 @@ async function Account() {
           </button>
         </form>
       </section>
+
+      {profile && isBillingConfigured() && (
+        <section className={section}>
+          <h2 className="text-lg font-semibold">Abo</h2>
+          <Billing
+            status={profile.subscription_status}
+            itemsUsed={profile.items_created_count}
+            limit={typeof limit === "number" ? limit : 20}
+            justPaid={abo === "danke"}
+          />
+        </section>
+      )}
 
       {settings && (
         <section className={section}>
@@ -63,12 +79,12 @@ async function Account() {
   );
 }
 
-export default function KontoPage() {
+export default function KontoPage({ searchParams }: PageProps<"/konto">) {
   return (
     <>
       <h1 className="text-2xl font-semibold">Konto</h1>
       <Suspense fallback={<p>Wird geladen …</p>}>
-        <Account />
+        <Account searchParams={searchParams} />
       </Suspense>
     </>
   );

@@ -31,6 +31,14 @@ async function FreeLimit() {
   return (
     <p className="text-sm text-zinc-600 dark:text-zinc-400">
       {used} von {limit} kostenlosen Artikeln angelegt
+      {used >= limit && (
+        <>
+          {" · "}
+          <Link href="/konto" className="underline">
+            Abo abschließen
+          </Link>
+        </>
+      )}
     </p>
   );
 }

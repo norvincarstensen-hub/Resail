@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { FILE_BUCKET } from "@/lib/files";
 import { parseEuroToCents } from "@/lib/money";
+import { getStripe, isBillingConfigured } from "@/lib/stripe";
 
 export type SettingsState = { error?: string; saved?: boolean };
 
@@ -52,6 +53,23 @@ export async function deleteAccount(_prev: DeleteState, formData: FormData): Pro
   const { data: claims } = await supabase.auth.getClaims();
   const userId = claims?.claims.sub;
   if (!userId) redirect("/login");
+
+  // Laufendes Abo kündigen, sonst würde Stripe nach dem Löschen weiter abbuchen
+  const { data: profile } = await supabase.from("profiles").select("stripe_subscription_id, subscription_status").single();
+  if (profile?.stripe_subscription_id && profile.subscription_status !== "canceled") {
+    if (!isBillingConfigured()) {
+      return { error: "Dein Abo konnte nicht gekündigt werden. Bitte melde dich beim Support." };
+    }
+    try {
+      await getStripe().subscriptions.cancel(profile.stripe_subscription_id);
+    } catch (e) {
+      // Bereits gekündigte Abos sind kein Problem, alles andere schon
+      const code = (e as { code?: string }).code;
+      if (code !== "resource_missing") {
+        return { error: "Dein Abo konnte nicht gekündigt werden. Bitte versuche es erneut." };
+      }
+    }
+  }
 
   // Dateien liegen unter <user_id>/<item_id>/<datei>
   const storage = supabase.storage.from(FILE_BUCKET);
