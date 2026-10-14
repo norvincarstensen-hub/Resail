@@ -28,13 +28,6 @@ begin
         and report_threshold_revenue_cents = 200000) <> 2 then
     raise exception 'FEHLER: settings-Einträge mit Standard-Grenzen fehlen';
   end if;
-  if (select count(*) from public.profiles
-      where id in ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
-        and subscription_status = 'trial'
-        and trial_ends_at between now() + interval '7 days' - interval '1 minute'
-                              and now() + interval '7 days' + interval '1 minute') <> 2 then
-    raise exception 'FEHLER: Testphase (7 Tage) wird nicht gesetzt';
-  end if;
 end $$;
 
 -- 2. Als Nutzer A anmelden und Daten anlegen
@@ -142,7 +135,54 @@ begin
   end if;
 end $$;
 
--- 5. Nicht angemeldete Besucher sehen gar nichts
+-- 5. Kostenlos höchstens 20 Artikel, Löschen schafft keinen Platz
+select set_config('request.jwt.claims',
+  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}', true);
+
+do $$
+declare
+  i integer;
+  last_item uuid;
+begin
+  for i in 1..20 loop
+    insert into public.items (name, item_type) values ('Artikel ' || i, 'weiterverkauf')
+      returning id into last_item;
+  end loop;
+
+  begin
+    insert into public.items (name, item_type) values ('Artikel 21', 'weiterverkauf');
+    raise exception 'FEHLER: Mit kostenlosem Konto ließ sich ein 21. Artikel anlegen';
+  exception when raise_exception then
+    if sqlerrm like 'FEHLER:%' then raise; end if;
+  end;
+
+  delete from public.items where id = last_item;
+  begin
+    insert into public.items (name, item_type) values ('Nach dem Löschen', 'weiterverkauf');
+    raise exception 'FEHLER: Löschen eines Artikels hat wieder Platz geschaffen';
+  exception when raise_exception then
+    if sqlerrm like 'FEHLER:%' then raise; end if;
+  end;
+
+  if (select items_created_count from public.profiles) <> 20 then
+    raise exception 'FEHLER: Artikel-Zähler stimmt nicht';
+  end if;
+end $$;
+
+-- Mit aktivem Abo geht es weiter (Status setzt hier der Admin, nicht der Nutzer)
+reset role;
+update public.profiles set subscription_status = 'active'
+  where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+set local role authenticated;
+
+do $$
+begin
+  insert into public.items (name, item_type) values ('Mit Abo', 'weiterverkauf');
+exception when raise_exception then
+  raise exception 'FEHLER: Mit aktivem Abo ließ sich kein weiterer Artikel anlegen';
+end $$;
+
+-- 6. Nicht angemeldete Besucher sehen gar nichts
 reset role;
 set local role anon;
 
