@@ -50,6 +50,9 @@ export type Light = "gruen" | "gelb" | "rot";
 
 export const WARN_RATIO = 0.8;
 
+// Standardwerte, wie in der Datenbank (settings) hinterlegt
+export const DEFAULT_THRESHOLDS: Thresholds = { sales: 30, revenueCents: 200000 };
+
 // Plattformen, für die eine Meldegrenze gilt. "Sonstige" ist keine einzelne Plattform.
 export const REPORTING_PLATFORMS = ["vinted", "kleinanzeigen", "ebay"] as const satisfies readonly SalePlatform[];
 
