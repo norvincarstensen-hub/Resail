@@ -40,6 +40,10 @@ type ListItem = Pick<
   "id" | "name" | "category" | "purchase_date" | "purchase_price_cents" | "status" | "photo_path"
 > & { sales: Sale[] };
 
+function saleDate(item: ListItem): string | null {
+  return item.sales.find((s) => !s.cancelled)?.sale_date ?? null;
+}
+
 function Amount({ item }: { item: ListItem }) {
   const sale = item.sales.find((s) => !s.cancelled);
   if (!sale) {
@@ -130,7 +134,9 @@ async function ItemList({ searchParams }: { searchParams: PageProps<"/artikel">[
                 <span className="block text-sm text-zinc-600 dark:text-zinc-400">
                   {STATUS_LABELS[item.status]}
                   {item.category && ` · ${item.category}`}
-                  {item.purchase_date && ` · ${formatDate(item.purchase_date)}`}
+                  {saleDate(item)
+                    ? ` · verkauft ${formatDate(saleDate(item)!)}`
+                    : item.purchase_date && ` · ${formatDate(item.purchase_date)}`}
                 </span>
               </span>
               <Amount item={item} />

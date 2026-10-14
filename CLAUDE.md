@@ -1,6 +1,6 @@
 # Reseller-Tracker
 
-Web-App (PWA) für Reseller auf Vinted, Kleinanzeigen und eBay. Zeigt den echten Gewinn pro Artikel und warnt, bevor die Plattform-Meldegrenzen ans Finanzamt erreicht sind (mehr als 30 Verkäufe oder 2.000 € Umsatz pro Plattform und Kalenderjahr).
+Web-App (PWA) für Reseller auf Vinted, Kleinanzeigen und eBay. Zeigt den echten Gewinn pro Artikel und warnt, bevor die Plattform-Meldegrenzen ans Finanzamt erreicht sind (ab 30 Verkäufen oder mehr als 2.000 € Umsatz pro Plattform und Kalenderjahr; befreit ist nur, wer unter 30 Verkäufen UND höchstens 2.000 € bleibt).
 
 Ziel: erste zahlende Version Anfang Januar 2027.
 
@@ -59,9 +59,9 @@ Später (nicht jetzt bauen): Screenshot-Import mit KI, Ausgaben ohne Artikelbezu
 
 ## Aktuelle Phase: 2 · Verkäufe und Auswertung
 
-- [ ] Verkauf erfassen (inkl. Gebühr, Versand, Verpackung), Rückgabe/Storno
-- [ ] Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
-- [ ] Melde-Ampel pro Plattform und Kalenderjahr
+- [x] Verkauf erfassen (inkl. Gebühr, Versand, Verpackung), Rückgabe/Storno
+- [x] Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
+- [x] Melde-Ampel pro Plattform und Kalenderjahr (rot ab Grenze, gelb ab 80 %; Umsatz = voller Verkaufspreis, damit eher zu früh gewarnt wird)
 
 ## Datenbank-Änderungen
 
