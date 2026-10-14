@@ -44,7 +44,7 @@ Gewinn pro Artikel = sale_price − purchase_price − platform_fee − shipping
 3. Verkauf erfassen (inkl. Gebühr, Versand, Verpackung), Rückgabe/Storno
 4. Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
 5. Melde-Ampel pro Plattform und Kalenderjahr (grün / gelb ab 80 % / rot ab Grenze)
-6. Export der Jahresübersicht als CSV und PDF
+6. Export der Jahresübersicht als CSV und PDF (erledigt)
 7. Login, Konto und Daten löschen, Daten exportieren (Seite /konto; Meldegrenzen dort einstellbar)
 
 Später (nicht jetzt bauen): Screenshot-Import mit KI, Ausgaben ohne Artikelbezug, Gewerbe-Modus, Ladenhüter-Ansicht, Gebührenrechner.
@@ -62,6 +62,19 @@ Später (nicht jetzt bauen): Screenshot-Import mit KI, Ausgaben ohne Artikelbezu
 - [x] Verkauf erfassen (inkl. Gebühr, Versand, Verpackung), Rückgabe/Storno
 - [x] Übersicht: Gewinn pro Artikel, Monat, Jahr, Plattform
 - [x] Melde-Ampel pro Plattform und Kalenderjahr (rot ab Grenze, gelb ab 80 %; Umsatz = voller Verkaufspreis, damit eher zu früh gewarnt wird)
+
+Außerdem erledigt: Export der Jahresübersicht als CSV und PDF (`/uebersicht/export`), Konto-Seite (`/konto`), als PWA installierbar (Manifest und Symbole, noch ohne Offline-Modus).
+
+## Nächste Phase: 3 · Start vorbereiten
+
+Entscheidungen des Nutzers nötig (Preis, Rechtstexte, Kosten):
+
+- [ ] Impressum und Datenschutzerklärung (Pflicht), später AGB und Widerrufsbelehrung für das Abo
+- [ ] Eigener E-Mail-Versand für die Login-Links (Supabase-Standard schafft nur wenige Mails pro Stunde)
+- [ ] Vercel Pro (Hobby ist nur nicht-kommerziell) und Supabase Pro (Gratis-Projekte pausieren bei Inaktivität)
+- [ ] Preis festlegen, dann Stripe für das Abo einbauen
+- [ ] Meldegrenzen (ab 30 Verkäufen / mehr als 2.000 €) mit offizieller Quelle (BZSt) abgleichen
+- [ ] Richtiges Logo statt Platzhalter-Symbol
 
 ## Arbeitsweise mit Claude
 

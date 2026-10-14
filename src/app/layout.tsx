@@ -11,11 +11,18 @@ export const metadata: Metadata = {
   title: "Reseller-Tracker",
   description:
     "Echter Gewinn pro Artikel und Warnung vor den Plattform-Meldegrenzen.",
+  applicationName: "Reseller-Tracker",
+  // iPhone: als App vom Home-Bildschirm ohne Browserleiste starten
+  appleWebApp: { capable: true, title: "Reseller", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

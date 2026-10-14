@@ -4,19 +4,13 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { formatCents } from "@/lib/money";
-import {
-  SALE_PLATFORM_LABELS,
-  todayInBerlin,
-  type Sale,
-  type SalePlatform,
-} from "@/lib/items";
+import { SALE_PLATFORM_LABELS, type SalePlatform } from "@/lib/items";
+import { currentYear as getCurrentYear, loadYear, parseYear } from "@/lib/year-data";
 import {
   REPORTING_PLATFORMS,
   remaining,
   reportingLight,
-  summarize,
   type Light,
-  type SaleWithItem,
   type Thresholds,
   type Totals,
 } from "@/lib/stats";
@@ -161,46 +155,16 @@ async function Overview({
   searchParams: PageProps<"/uebersicht">["searchParams"];
 }) {
   await connection();
-  const currentYear = Number(todayInBerlin().slice(0, 4));
+  const currentYear = getCurrentYear();
   const { jahr } = await searchParams;
-  const parsed = Number(jahr);
-  const year =
-    Number.isInteger(parsed) && parsed >= 2000 && parsed <= currentYear
-      ? parsed
-      : currentYear;
+  const year = parseYear(jahr);
 
   const supabase = await createClient();
-  const [{ data: settings }, { data: rows, error }] = await Promise.all([
-    supabase
-      .from("settings")
-      .select("report_threshold_sales, report_threshold_revenue_cents")
-      .single(),
-    supabase
-      .from("sales")
-      .select(
-        "id, sale_date, platform, sale_price_cents, platform_fee_cents, shipping_cents, packaging_cents, cancelled, items(purchase_price_cents)",
-      )
-      .gte("sale_date", `${year}-01-01`)
-      .lte("sale_date", `${year}-12-31`)
-      .eq("cancelled", false)
-      .returns<(Sale & { items: { purchase_price_cents: number } | null })[]>(),
-  ]);
-
-  if (error || !settings) {
-    return (
-      <p className="text-red-600">Die Übersicht konnte nicht geladen werden.</p>
-    );
+  const data = await loadYear(supabase, year);
+  if (!data) {
+    return <p className="text-red-600">Die Übersicht konnte nicht geladen werden.</p>;
   }
-
-  const limits: Thresholds = {
-    sales: settings.report_threshold_sales,
-    revenueCents: settings.report_threshold_revenue_cents,
-  };
-  const sales: SaleWithItem[] = (rows ?? []).map(({ items, ...sale }) => ({
-    ...sale,
-    purchase_price_cents: items?.purchase_price_cents ?? 0,
-  }));
-  const { year: totals, byMonth, byPlatform } = summarize(sales);
+  const { limits, totals, byMonth, byPlatform } = data;
 
   // Plattformen mit Verkäufen, die mit der höchsten Ampelstufe zuerst
   const order: Record<Light, number> = { rot: 0, gelb: 1, gruen: 2 };
@@ -332,6 +296,30 @@ async function Overview({
             ))}
           </ul>
         </section>
+      )}
+
+      {totals.count > 0 && (
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">Jahresübersicht exportieren</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Alle Verkäufe {year} mit Gewinn, zum Beispiel für deine Unterlagen. CSV lässt sich in Excel
+          oder Numbers öffnen.
+        </p>
+        <div className="flex gap-3">
+          <a
+            href={`/uebersicht/export?jahr=${year}&format=pdf`}
+            className="rounded-lg border border-zinc-300 px-4 py-3 dark:border-zinc-700"
+          >
+            PDF
+          </a>
+          <a
+            href={`/uebersicht/export?jahr=${year}&format=csv`}
+            className="rounded-lg border border-zinc-300 px-4 py-3 dark:border-zinc-700"
+          >
+            CSV
+          </a>
+        </div>
+      </section>
       )}
 
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
