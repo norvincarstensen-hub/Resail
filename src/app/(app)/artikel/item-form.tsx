@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { centsToInput } from "@/lib/money";
 import {
-  ITEM_STATUSES,
   ITEM_TYPES,
+  MANUAL_STATUSES,
   ITEM_TYPE_HINTS,
   ITEM_TYPE_LABELS,
   PURCHASE_SOURCES,
@@ -126,20 +126,30 @@ export function ItemForm({ action, item, today, submitLabel }: Props) {
           <label htmlFor="status" className={label}>
             Status
           </label>
-          <SelectWrapper>
-          <select
-            id="status"
-            name="status"
-            defaultValue={item?.status ?? "lager"}
-            className={selectClass}
-          >
-            {ITEM_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-          </SelectWrapper>
+          {item?.status === "verkauft" ? (
+            // Verkauft bleibt verkauft, bis eine Rückgabe oder ein Storno erfasst wird.
+            <>
+              <input type="hidden" name="status" value="verkauft" />
+              <p id="status" className="rounded-lg border border-zinc-200 px-3 py-3 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                {STATUS_LABELS.verkauft}
+              </p>
+            </>
+          ) : (
+            <SelectWrapper>
+              <select
+                id="status"
+                name="status"
+                defaultValue={item?.status ?? "lager"}
+                className={selectClass}
+              >
+                {MANUAL_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {STATUS_LABELS[status]}
+                  </option>
+                ))}
+              </select>
+            </SelectWrapper>
+          )}
         </div>
       </div>
 

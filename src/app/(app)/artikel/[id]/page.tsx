@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { FILE_BUCKET, SIGNED_URL_SECONDS } from "@/lib/files";
-import { todayInBerlin, type Item, type Receipt } from "@/lib/items";
+import { todayInBerlin, type Item, type Receipt, type Sale } from "@/lib/items";
 import { updateItem } from "../actions";
 import { DeleteButton } from "../delete-button";
 import { ItemForm } from "../item-form";
 import { PhotoUpload } from "./photo-upload";
 import { Receipts } from "./receipts";
+import { SaleSection } from "./sale-section";
 
 export const metadata: Metadata = { title: "Artikel bearbeiten · Reseller-Tracker" };
 
@@ -19,7 +20,7 @@ async function EditItem({ params }: { params: PageArgs["params"] }) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: claims }, { data: item }, { data: receipts }] = await Promise.all([
+  const [{ data: claims }, { data: item }, { data: receipts }, { data: sales }] = await Promise.all([
     supabase.auth.getClaims(),
     supabase
       .from("items")
@@ -34,6 +35,14 @@ async function EditItem({ params }: { params: PageArgs["params"] }) {
       .eq("item_id", id)
       .order("created_at")
       .returns<Receipt[]>(),
+    supabase
+      .from("sales")
+      .select(
+        "id, sale_date, platform, sale_price_cents, platform_fee_cents, shipping_cents, packaging_cents, cancelled",
+      )
+      .eq("item_id", id)
+      .order("created_at", { ascending: false })
+      .returns<Sale[]>(),
   ]);
 
   // Fremde Artikel liefert die Datenbank (RLS) gar nicht erst aus.
@@ -53,6 +62,12 @@ async function EditItem({ params }: { params: PageArgs["params"] }) {
   return (
     <>
       <PhotoUpload itemId={item.id} userId={userId} photoUrl={urlFor(item.photo_path)} />
+      <SaleSection
+        itemId={item.id}
+        purchasePriceCents={item.purchase_price_cents}
+        sales={sales ?? []}
+        today={todayInBerlin()}
+      />
       <ItemForm
         action={updateItem.bind(null, item.id)}
         item={item}
