@@ -19,6 +19,7 @@ Ziel: erste zahlende Version Anfang Januar 2027.
 - Beträge immer als ganze Zahl in Cent speichern, nie als Kommazahl. Anzeige im deutschen Format (1.234,56 €).
 - Row Level Security auf allen Tabellen: Jeder Nutzer sieht nur seine eigenen Daten.
 - Meldegrenzen (30 Verkäufe / 2.000 €) als Einstellung speichern, nicht fest im Code.
+- Preismodell: kostenlos bis 20 Artikel, danach Abo. Gezählt wird jeder je angelegte Artikel (Löschen schafft keinen Platz). Keine zeitliche Testphase. Die Grenze wird in der Datenbank durchgesetzt (`free_item_limit()`), nicht nur in der Oberfläche.
 - Keine Automatisierung auf Vinted oder anderen Plattformen: kein Scraping, kein Relisting, kein Crossposting, kein Zugriff auf Nutzerkonten dort.
 - Keine Steuerberatung in Texten: Die App rechnet und erklärt allgemein, beurteilt aber nie den Einzelfall (z. B. nicht "Du bist gewerblich"). Formulierungen wie "Ab hier meldet die Plattform deine Verkäufe ans Finanzamt" sind okay.
 - "Vinted" nicht im App-Namen oder Logo verwenden.
@@ -26,7 +27,7 @@ Ziel: erste zahlende Version Anfang Januar 2027.
 
 ## Datenmodell (Version 1)
 
-- **profiles**: id (= auth user), email, subscription_status, trial_ends_at, created_at
+- **profiles**: id (= auth user), email, subscription_status (free | active | past_due | canceled), items_created_count, created_at. Für Nutzer nur lesbar.
 - **items**: id, user_id, name, category, purchase_date, purchase_price_cents, purchase_source (flohmarkt | vinted | privat | laden | sonstige), item_type (eigener_gebrauchtgegenstand | weiterverkauf), status (lager | gelistet | verkauft | retour), photo_path, note, created_at
 - **receipts**: id, item_id, user_id, file_path, type (kassenbon | ueberweisung | screenshot | sonstiges), created_at
 - **sales**: id, item_id, user_id, sale_date, platform (vinted | kleinanzeigen | ebay | sonstige), sale_price_cents, platform_fee_cents, shipping_cents, packaging_cents, cancelled (bool), created_at. Höchstens ein aktiver Verkauf pro Artikel.
