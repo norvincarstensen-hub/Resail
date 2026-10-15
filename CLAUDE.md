@@ -9,7 +9,7 @@ Ziel: erste zahlende Version Anfang Januar 2027.
 - Next.js (App Router) mit TypeScript
 - Tailwind CSS
 - Supabase: Postgres, Auth (E-Mail), Storage für Fotos und Belege, Region Frankfurt
-- Stripe für Abos (erst Phase 3)
+- Stripe für Abos (Checkout, Kundenportal, Webhook `/api/stripe/webhook`)
 - Hosting: Vercel
 - Als PWA installierbar
 
@@ -72,7 +72,7 @@ Entscheidungen des Nutzers nötig (Preis, Rechtstexte, Kosten):
 - [ ] Impressum und Datenschutzerklärung (Pflicht), später AGB und Widerrufsbelehrung für das Abo
 - [ ] Eigener E-Mail-Versand für die Login-Links (Supabase-Standard schafft nur wenige Mails pro Stunde)
 - [ ] Vercel Pro (Hobby ist nur nicht-kommerziell) und Supabase Pro (Gratis-Projekte pausieren bei Inaktivität)
-- [ ] Preis festlegen, dann Stripe für das Abo einbauen
+- [x] Preis festgelegt: 4,99 € / Monat oder 39 € / Jahr. Stripe eingebaut (Testmodus/Sandbox). Server-Schlüssel nur in Vercel: `SUPABASE_SECRET_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`. Für echte Zahlungen: Stripe-Konto verifizieren, Live-Schlüssel und Live-Preise eintragen, Webhook im Live-Modus neu anlegen.
 - [ ] Meldegrenzen (ab 30 Verkäufen / mehr als 2.000 €) mit offizieller Quelle (BZSt) abgleichen
 - [ ] Richtiges Logo statt Platzhalter-Symbol
 
